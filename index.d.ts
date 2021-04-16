@@ -210,6 +210,7 @@ export type WinterRequestResponseData = {
 		[name: string]: Array<string>,
 	},
 	X_WINTER_FLASH_MESSAGES?: Record<WinterRequestFlashMessageType, string>,
+	result: any,
 	[key: string]: any,
 };
 
