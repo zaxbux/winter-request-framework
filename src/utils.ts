@@ -2,7 +2,7 @@ import * as JSON5 from 'json5';
 import WnRequest from '.';
 import { WinterRequestResponseData } from '..';
 import { ajaxUpdate, ajaxBeforeReplace, ajaxUpdateComplete } from './events';
-import DataStore from './dom-data-store';
+import DataStore from './data-store';
 
 /**
  * Validate the AJAX handler name. E.g.: `[componentName::]onHandlerName`.
@@ -199,7 +199,7 @@ export function attachEventListeners(r: WnRequest): void {
 				return;
 			}
 
-			DataStore.set(ev.target, ev.target.value, 'wn.lastValue');
+			DataStore.put(ev.target, 'wn.lastValue', ev.target.value);
 
 			if (r.dataTrackInputTimer !== undefined) {
 				window.clearTimeout(this.dataTrackInputTimer);
@@ -216,7 +216,7 @@ export function attachEventListeners(r: WnRequest): void {
 					lastDataTrackInputRequest.abort();
 				}
 				lastDataTrackInputRequest = new WnRequest(r.element, r.handler, r.options);
-				DataStore.set(elem, lastDataTrackInputRequest, 'wn.lastRequest');
+				DataStore.put(elem, 'wn.lastRequest', lastDataTrackInputRequest);
 				lastDataTrackInputRequest.send();
 
 			}, interval);
