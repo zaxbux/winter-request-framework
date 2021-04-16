@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"outDir": "dist/",
+		"checkJs": true,
+		"target": "ES2020",
+		"module": "ES6",
+		"moduleResolution": "Node"
+	},
+	"exclude": [
+		"dist",
+		"node_modules",
+		"**/node_modules/*"
+	]
+}
