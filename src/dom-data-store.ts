@@ -3,16 +3,20 @@
 export type DOMDataStoreInit<K, V> = readonly [K, V][];
 
 export class DOMDataStore<K extends object = object, V = any> {
-	private _init: DOMDataStoreInit<K, V>;
+	private static instance: DOMDataStore;
 	private _storage: WeakMap<K, V>;
 
 	constructor(init?: DOMDataStoreInit<K, V>) {
-		this._init = init;
-		this._storage = new WeakMap<K, V>(init);
+		if (!DOMDataStore.instance) {
+			this._storage = new WeakMap<K, V>(init);
+			DOMDataStore.instance = this;
+		}
+
+		return DOMDataStore.instance;
 	}
 
 	clear(): void {
-		this._storage = new WeakMap<K, V>(this._init);
+		this._storage = new WeakMap<K, V>();
 	}
 
 	delete(k: K): boolean {
@@ -33,7 +37,7 @@ export class DOMDataStore<K extends object = object, V = any> {
 
 	set(k: K, v: V, key?: string): DOMDataStore<K, V> {
 		if (key) {
-			this._storage.set(k, {...this.get(k, key), ...v});
+			this._storage.set(k, { ...this.get(k, key), ...v });
 		} else {
 			this._storage.set(k, v);
 		}
@@ -41,15 +45,7 @@ export class DOMDataStore<K extends object = object, V = any> {
 	}
 }
 
-declare global {
-	interface Window {
-		wn?: {
-			dataStore?: DOMDataStore<Node>,
-		},
-	}
-}
+const instance = new DOMDataStore<Node>();
+Object.freeze(instance);
 
-(() => {
-	window.wn = {};
-	window.wn.dataStore = new DOMDataStore<Node>();
-})();
+export default instance;

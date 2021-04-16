@@ -2,6 +2,7 @@ import * as JSON5 from 'json5';
 import WnRequest from '.';
 import { WinterRequestResponseData } from '..';
 import { ajaxUpdate, ajaxBeforeReplace, ajaxUpdateComplete } from './events';
+import DataStore from './dom-data-store';
 
 /**
  * Validate the AJAX handler name. E.g.: `[componentName::]onHandlerName`.
@@ -188,7 +189,7 @@ export function attachEventListeners(r: WnRequest): void {
 
 	r.element.addEventListener('keyup', (ev) => {
 		if (ev.target instanceof HTMLInputElement && ev.target.matches(documentOnKeyup)) {
-			const lastValue = window.wn.dataStore.get(ev.target, 'wn.lastValue');
+			const lastValue = DataStore.get(ev.target, 'wn.lastValue');
 
 			if (!ev.target.matches('[type=email], [type=number], [type=password], [type=search], [type=text]')) {
 				return;
@@ -198,7 +199,7 @@ export function attachEventListeners(r: WnRequest): void {
 				return;
 			}
 
-			window.wn.dataStore.set(ev.target, ev.target.value, 'wn.lastValue');
+			DataStore.set(ev.target, ev.target.value, 'wn.lastValue');
 
 			if (r.dataTrackInputTimer !== undefined) {
 				window.clearTimeout(this.dataTrackInputTimer);
@@ -209,13 +210,13 @@ export function attachEventListeners(r: WnRequest): void {
 			const elem = ev.target;
 
 			r.dataTrackInputTimer = window.setTimeout(() => {
-				let lastDataTrackInputRequest = window.wn.dataStore.get(elem, 'wn.lastRequest');
+				let lastDataTrackInputRequest = DataStore.get(elem, 'wn.lastRequest');
 
 				if (lastDataTrackInputRequest) {
 					lastDataTrackInputRequest.abort();
 				}
 				lastDataTrackInputRequest = new WnRequest(r.element, r.handler, r.options);
-				window.wn.dataStore.set(elem, lastDataTrackInputRequest, 'wn.lastRequest');
+				DataStore.set(elem, lastDataTrackInputRequest, 'wn.lastRequest');
 				lastDataTrackInputRequest.send();
 
 			}, interval);
