@@ -1,14 +1,19 @@
 {
 	"compilerOptions": {
-		"outDir": "dist/",
-		"checkJs": true,
+		"rootDir": "src",
+		"outDir": "lib",
 		"target": "ES2020",
 		"module": "ES6",
-		"moduleResolution": "Node"
+		"moduleResolution": "Node",
+		"esModuleInterop": true,
+		"declaration": true,
+		"sourceMap": true,
+		"lib": [
+			"DOM", "ES2020", "DOM.Iterable"
+		],
+		//"types": ["node"],
+		"typeRoots": ["node_modules/@types", "src/types"]
 	},
-	"exclude": [
-		"dist",
-		"node_modules",
-		"**/node_modules/*"
-	]
+	"include": [ "./src/**/*" ],
+	"exclude": [ "node_modules/**" ],
 }

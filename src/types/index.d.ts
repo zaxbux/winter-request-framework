@@ -1,0 +1,1 @@
+export type HTMLInputLikeElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement;

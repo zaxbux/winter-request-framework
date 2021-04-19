@@ -41,7 +41,8 @@ This section serves to document the intricacies of how the communication between
 | --------------------------- | ------- | -------
 | `X-Requested-With`          | Tells Winter/Laravel/Symfony that the request is an "AJAX Request". | `XMLHttpRequest`
 | `X-WINTER-REQUEST-HANDLER`  | Tells Winter which AJAX handler method to use on the controller/component. [modules/backend/classes/Controller.php#L435](https://github.com/wintercms/winter/blob/a56d7ec2af948480a2b24971b8118490f14dd042/modules/backend/classes/Controller.php#L435) | Component handler: `component::onEvent`; Generic handler: `onEvent` (Note: the `onAjax` handler name will always return null)
-| `X-WINTER-REQUEST-FLASH`    | Tells Winter that it should respond with flash messages. [modules/cms/classes/Controller.php#L764](https://github.com/wintercms/winter/blob/a56d7ec2af948480a2b24971b8118490f14dd042/modules/cms/classes/Controller.php#L764) | `true` \| `false`
+| `X-WINTER-REQUEST-PARTIALS` | Tells Winter which partials to render and return in the response. | Names of partials, separated by the `&` character. E.g. `partial1&partial2&partial3`
+| `X-WINTER-REQUEST-FLASH`    | Tells Winter that it should clear existing flash messages respond with new flash messages. [modules/cms/classes/Controller.php#L764](https://github.com/wintercms/winter/blob/a56d7ec2af948480a2b24971b8118490f14dd042/modules/cms/classes/Controller.php#L764) | `true` \| `false`
 
 ### Response Data
 

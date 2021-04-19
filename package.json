@@ -2,11 +2,10 @@
 	"name": "@zaxbux/winter-request-framework",
 	"version": "0.0.1",
 	"description": "winter-request-framework is a TypeScript replacement for the standard jQuery-based Winter CMS AJAX framework library.",
-	"main": "dist/index.js",
-	"module": "dist/index.mjs",
-	"typings": "dist/types/index.d.ts",
+	"module": "lib/index.js",
+	"types": "lib/index.d.ts",
 	"files": [
-		"dist/"
+		"lib/"
 	],
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",

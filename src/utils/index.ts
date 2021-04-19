@@ -1,8 +1,9 @@
-import * as JSON5 from 'json5';
-import WnRequest from '.';
-import { WinterRequestResponseData } from '..';
-import { ajaxUpdate, ajaxBeforeReplace, ajaxUpdateComplete } from './events';
+import { parse } from 'json5';
+import { Request } from '../request';
+import { WinterRequestResponseData } from '../request/base';
+import { ajaxUpdate, ajaxBeforeReplace, ajaxUpdateComplete } from '../events';
 import DataStore from './data-store';
+import { HTMLInputLikeElements } from '../types';
 
 /**
  * Validate the AJAX handler name. E.g.: `[componentName::]onHandlerName`.
@@ -16,7 +17,7 @@ export function validateHandler(handler: string): void {
 	}
 
 	if (!handler.match(/^(?:\w+:{2})?on*/)) {
-		throw new Error('Invalid handler name. The correct handler name format is: "[componentName::]onHandlerName".');
+		throw new Error(`Invalid handler name "${handler}". The correct format is: "[componentName::]onHandlerName".`);
 	}
 }
 
@@ -32,17 +33,17 @@ export function paramToObj(value: string): any {
 	if (value === undefined) value = '';
 	if (typeof value == 'object') return value;
 
-	return JSON5.parse('{' + value + '}');
+	return parse('{' + value + '}');
 }
 
 /**
-	 * Search the DOM for parents of the element that have [data-request-data].
-	 *
-	 * @since 0.0.1
-	 * @param el The starting element.
-	 * @returns The request data collected from the element's parents.
-	 */
-export function extendRequest(el: HTMLElement): Record<string, any> {
+ * Search the DOM for parents of the element that have [data-request-data].
+ *
+ * @since 0.0.1
+ * @param el The starting element.
+ * @returns The request data collected from the element's parents.
+ */
+export function getRequestDataAttrs(el: HTMLElement): Record<string, any> {
 	const requestData = {};
 	const elements = [];
 
@@ -95,7 +96,7 @@ export async function injectPartials(partials: { [name: string]: string }, data:
 	window.dispatchEvent(new Event('resize'));
 }
 
-export function attachEventListeners(r: WnRequest): void {
+export function attachEventListeners(r: Request): void {
 	const documentOnChange = 'select[data-request], input[type=radio][data-request], input[type=checkbox][data-request], input[type=file][data-request]';
 	/*$(document).on('change', documentOnChange, function documentOnChange() {
 		$(this).request();
@@ -103,7 +104,7 @@ export function attachEventListeners(r: WnRequest): void {
 
 	document.addEventListener('change', (ev) => {
 		if (ev.target instanceof HTMLElement && ev.target.matches(documentOnChange)) {
-			WnRequest.instance({ element: ev.target });
+			Request.instance({ element: ev.target });
 		}
 	});
 	
@@ -122,7 +123,7 @@ export function attachEventListeners(r: WnRequest): void {
 		if (ev.target instanceof HTMLElement && ev.target.matches(documentOnClick)) {
 			ev.preventDefault();
 
-			WnRequest.instance({ element: ev.target });
+			Request.instance({ element: ev.target });
 
 			if (ev.target.matches('[type=submit]')) {
 				ev.stopPropagation();
@@ -149,7 +150,7 @@ export function attachEventListeners(r: WnRequest): void {
 				window.clearTimeout(r.dataTrackInputTimer);
 			}
 
-			WnRequest.instance({ element: ev.target });
+			Request.instance({ element: ev.target });
 			ev.preventDefault();
 			ev.stopPropagation();
 			
@@ -215,7 +216,7 @@ export function attachEventListeners(r: WnRequest): void {
 				if (lastDataTrackInputRequest) {
 					lastDataTrackInputRequest.abort();
 				}
-				lastDataTrackInputRequest = new WnRequest(r.element, r.handler, r.options);
+				lastDataTrackInputRequest = new Request(r.element, r.handler, r.options);
 				DataStore.put(elem, 'wn.lastRequest', lastDataTrackInputRequest);
 				lastDataTrackInputRequest.send();
 
@@ -267,4 +268,50 @@ export function attachEventListeners(r: WnRequest): void {
 		$(document).on('render', callback);
 	};
 	*/
+}
+
+/**
+ * Evaluate if a string is truthy.
+ * 
+ * @param string A "truthy" string value.
+ * @returns True if `1`, `"1"`, `true`, `"true"`, or `[1]`.
+ */
+export function stringToBoolean(string: string | boolean): boolean {
+	return (typeof string === 'string' && string.toLowerCase() === 'true') || string == true;
+}
+
+/**
+ * Queries the DOM for a selector string and returns the first matching HTMLElement.
+ * 
+ * @param element A selector string, or HTMLElement.
+ * @returns The matching element.
+ */
+export function getElement<E extends HTMLElement = HTMLElement>(element: string | E): E {
+	if (typeof element === 'string') return document.querySelector<E>(element);
+
+	return element;
+}
+
+/**
+ * Checks if an element is input-like.
+ * 
+ * @param element The element to test.
+ * @returns True if the element is an HTML input-like element.
+ */
+export function isInputLike<T extends HTMLInputLikeElements>(element: HTMLElement): element is T {
+	return element instanceof HTMLInputElement ||
+		element instanceof HTMLTextAreaElement ||
+		element instanceof HTMLSelectElement ||
+		element instanceof HTMLButtonElement;
+}
+
+/**
+ * Checks if an object is empty.
+ * 
+ * @param obj The object to check.
+ * @returns True if empty, false if not.
+ */
+export function isEmpty(obj: Record<string, unknown>): boolean {
+	for (const _i in obj) return true;
+	return false;
 }
