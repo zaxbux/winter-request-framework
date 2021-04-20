@@ -1,24 +1,22 @@
-//import axios, { AxiosResponse, AxiosError } from 'axios';
 import { AxiosResponse } from 'axios';
 import { ValidationFailedError } from './errors';
 import * as events from './events';
-import { attachEventListeners, getElement, getRequestDataAttrs, isEmpty, isInputLike, paramToObj, stringToBoolean } from './utils';
-import { WinterRequestFrameworkBase, IWinterRequestFrameworkOptionsBase, WinterRequestResponseData } from './request/base';
+import { IWinterRequestFrameworkOptionsBase, WinterRequestFrameworkBase, WinterRequestResponseData } from './request/base';
+import { getElement, getRequestDataAttrs, isEmpty, isInputLike, paramToObj, stringToBoolean } from './utils';
+
+type RequestOptions = IWinterRequestFrameworkOptionsBase<Request>;
 
 export type WinterRequestStaticArgs = {
 	element?: HTMLElement,
 	handler?: string,
-	options?: IWinterRequestFrameworkOptionsBase<Request>,
+	options?: RequestOptions,
 };
 
 /**
  * @classdesc The main Request class for Winter AJAX Framework.
  */
 export class Request extends WinterRequestFrameworkBase {
-	//handler: string;
-	//options: WinterRequestFrameworkOptions;
-
-	protected _options: IWinterRequestFrameworkOptionsBase<Request>;
+	protected _options: RequestOptions;
 
 	private _element: HTMLElement;
 	private _loading?: HTMLElement;
@@ -29,7 +27,7 @@ export class Request extends WinterRequestFrameworkBase {
 	 * @param handler Name of the AJAX handler that the server should execute.
 	 * @param options Additional options used to setup the request, overrides data attribute options.
 	 */
-	constructor(element?: string | HTMLElement, handler?: string, options?: IWinterRequestFrameworkOptionsBase<Request>) {
+	constructor(element?: string | HTMLElement, handler?: string, options: RequestOptions = {}) {
 		const _element = getElement(element);
 
 		// Get handler from element if available
@@ -37,24 +35,27 @@ export class Request extends WinterRequestFrameworkBase {
 			handler = _element.dataset.request;
 		}
 
-		super(handler);
+		// data-request-* options
+		if (_element) {
+			options = {
+				confirm: _element.dataset.requestConfirm,
+				redirect: _element.dataset.requestRedirect,
+				loading: _element.dataset.requestLoading,
+				flash: stringToBoolean(_element.dataset.requestFlash),
+				files: stringToBoolean(_element.dataset.requestFiles),
+				json: stringToBoolean(_element.dataset.requestJson),
+				form: _element.dataset.requestForm,
+				url: _element.dataset.requestUrl,
+				update: paramToObj(_element.dataset.requestUpdate),
+				data: paramToObj(_element.dataset.requestData),
+				browserValidate: stringToBoolean(_element.dataset.requestBrowserValidate),
+				...options
+			};
+		}
+
+		super(handler, options);
 
 		this._element = _element;
-
-		// Options
-		Object.assign<IWinterRequestFrameworkOptionsBase<Request>, IWinterRequestFrameworkOptionsBase<Request>, IWinterRequestFrameworkOptionsBase<Request>>(this.options, {
-			confirm: this.element.dataset.requestConfirm,
-			redirect: this.element.dataset.requestRedirect,
-			loading: this.element.dataset.requestLoading,
-			flash: stringToBoolean(this.element.dataset.requestFlash),
-			files: stringToBoolean(this.element.dataset.requestFiles),
-			json: stringToBoolean(this.element.dataset.requestJson),
-			form: this.element.dataset.requestForm,
-			url: this.element.dataset.requestUrl,
-			update: paramToObj(this.element.dataset.requestUpdate),
-			data: paramToObj(this.element.dataset.requestData),
-			browserValidate: stringToBoolean(this.element.dataset.requestBrowserValidate),
-		}, options || {});
 
 		// If not null and a HTMLFormElement was not provided, query the DOM for the selector.
 		// Otherwise, select the closest form element (including the element itself).
@@ -70,8 +71,6 @@ export class Request extends WinterRequestFrameworkBase {
 
 		// Loading
 		this._loading = getElement(this.options.loading);
-
-		attachEventListeners(this);
 	}
 
 	get element(): HTMLElement {

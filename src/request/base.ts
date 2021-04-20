@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, CancelTokenSource } from 'axios';
-import { validateHandler, injectPartials } from '../utils';
+import { trackInput, validateHandler } from '../utils';
+import { injectPartials } from '../utils';
 
 export type WinterRequestFlashMessageType = 'info' | 'success' | 'warning' | 'error';
 
@@ -171,7 +172,7 @@ export interface IWinterRequestFrameworkOptionsBase<C extends WinterRequestFrame
 	/**
 	  * Track input on form fields.
 	  */
-	trackInput?: boolean,
+	trackInput?: boolean|number,
 
 	handlers?: IWinterRequestFrameworkOptions<C>['handlers'] & {
 		/**
@@ -218,6 +219,13 @@ export interface IWinterRequestFrameworkOptionsBase<C extends WinterRequestFrame
 		 * @param response The response object.
 		 */
 		onAssets? (this: C, assets: WinterRequestResponseAssets): Promise<any>,
+
+		/**
+		 * Callback function to execute when tracking keystrokes.
+		 * 
+		 * @param interval The interval between key-ups to wait before sending a request.
+		 */
+		trackInput? (interval?: number): void,
 	},
 
 	/**
@@ -330,6 +338,7 @@ export const defaults: IWinterRequestFrameworkOptionsBase<WinterRequestFramework
 		},
 		onBeforeUpdate: async () => { /**/ },
 		onAssets: async () => { /**/ },
+		trackInput: trackInput,
 	},
 	ajaxHandlers: {
 		ajaxSetup: async (config) => config,
@@ -348,11 +357,14 @@ export class WinterRequestFrameworkBase<T = any> implements IWinterRequestFramew
 	protected _options: IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase<T>>;
 	protected _axios: AxiosInstance;
 
-	constructor(handler?: string, options?: IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase>) {
+	constructor(handler?: string, options: IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase> = {}) {
 		validateHandler(handler);
 
 		this._handler = handler;
-		this.options = Object.assign<unknown, IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase>, IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase>>({}, defaults, options || {});
+		this.options = {
+			...defaults,
+			...options,
+		};
 		this._axiosCancelToken = axios.CancelToken.source();
 		this._axios = axios.create({
 			method: 'post',
@@ -362,17 +374,23 @@ export class WinterRequestFrameworkBase<T = any> implements IWinterRequestFramew
 			},
 			cancelToken: this._axiosCancelToken.token,
 		});
+
+		if (typeof this._options.trackInput === 'number') {
+			this._options.handlers.trackInput(this._options.trackInput);
+		} else if (this._options.trackInput === true) {
+			this._options.handlers.trackInput();
+		}
 	}
 
 	get handler(): string {
 		return this._handler;
 	}
 
-	get options(): IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase> {
+	get options(): IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase<T>> {
 		return this._options;
 	}
 
-	set options(options: IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase>) {
+	set options(options: IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase<T>>) {
 		this._options = options;
 	}
 
