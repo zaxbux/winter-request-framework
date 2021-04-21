@@ -36,12 +36,12 @@ const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
 				window.dispatchEvent(events.ajaxBeforeSend({ context: this }));
 
 				// Trigger the 'ajaxPromise' event on the attached element
-				this.element.dispatchEvent(events.ajaxPromise({ context: this }));
+				if (this.element) this.element.dispatchEvent(events.ajaxPromise({ context: this }));
 			},
 			onSuccess: async function (response) {
 				const element = this.form || this.element;
 				if (!this.options.redirect) {
-					element.dispatchEvent(events.ajaxDone({ context: this, response }));
+					if (element)  element.dispatchEvent(events.ajaxDone({ context: this, response }));
 				}
 
 				// Halt here if onBeforeUpdate() returns `false`
@@ -64,13 +64,13 @@ const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
 				// Proceed with the update process
 				await this.options.handlers.onUpdateResponse.call(this, response.data);
 
-				element.dispatchEvent(events.ajaxSuccess({ context: this, data: response.data }));
+				if (element) element.dispatchEvent(events.ajaxSuccess({ context: this, data: response.data }));
 			},
 			onError: async function (error) {
 				const element = this.form || this.element;
 
 				if (!this.options.redirect) {
-					element.dispatchEvent(events.ajaxFail({ context: this, error }));
+					if (element) element.dispatchEvent(events.ajaxFail({ context: this, error }));
 				}
 			
 				let errorMsg: string = error.response.statusText;
@@ -83,7 +83,7 @@ const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
 				}
 
 				// Trigger 'ajaxError' on the form, halt if event.preventDefault() is called
-				if (!element.dispatchEvent(events.ajaxError({ context: this, error }))) {
+				if (element && !element.dispatchEvent(events.ajaxError({ context: this, error }))) {
 					return;
 				}
 
@@ -92,19 +92,19 @@ const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
 			onComplete: async function (response, error) {
 				const element = this.form || this.element;
 
-				if (this.loading) {
+				if (this.loading instanceof HTMLElement) {
 					this.loading.dispatchEvent(events.wnAfterRequest());
 				}
 
-				element.dispatchEvent(events.ajaxAlways({ context: this, response, error }));
+				if (element) element.dispatchEvent(events.ajaxAlways({ context: this, response, error }));
 
-				element.dispatchEvent(events.ajaxComplete({ context: this, response, error }));
+				if (element) element.dispatchEvent(events.ajaxComplete({ context: this, response, error }));
 			},
 			//onUpdateResponse: baseDefaults.handlers.onUpdateResponse,
 			onValidationMessage: async function (message, fields) {
 				const element = this.form || this.element;
 
-				element.dispatchEvent(events.ajaxValidation({ context: this, message, fields }));
+				if (element) element.dispatchEvent(events.ajaxValidation({ context: this, message, fields }));
 
 				let isFirstInvalidField = true;
 
@@ -127,7 +127,7 @@ const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
 			},
 			onRedirectResponse: async function (url) {
 				window.addEventListener('popstate', () => {
-					this.element.dispatchEvent(events.ajaxRedirected());
+					if (this.element) this.element.dispatchEvent(events.ajaxRedirected());
 				}, { once: true });
 
 				await baseDefaults.handlers.onRedirectResponse.call(this, url);

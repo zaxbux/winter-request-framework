@@ -177,10 +177,12 @@ export class Request extends WinterRequestFrameworkBase {
 			throw new ValidationFailedError();
 		}
 
-		this.element.dispatchEvent(events.ajaxSetup({ context: this }));
+		if (this.element) {
+			this.element.dispatchEvent(events.ajaxSetup({ context: this }));
 
-		if (!this.element.dispatchEvent(events.wnBeforeRequest({ context: this }))) {
-			return;
+			if (!this.element.dispatchEvent(events.wnBeforeRequest({ context: this }))) {
+				return;
+			}
 		}
 
 		return super.send(data);
