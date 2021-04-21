@@ -1,22 +1,16 @@
 import merge from 'deepmerge';
-import { AxiosResponse } from 'axios';
-import { ValidationFailedError } from './errors';
+import { RequestOptions } from './types';
+import defaults from './defaults';
+import { ValidationFailedError } from '../errors';
 import * as events from './events';
-import { IWinterRequestFrameworkOptionsBase, WinterRequestFrameworkBase, WinterRequestResponseData } from './request/base';
-import { getElement, getRequestDataAttrs, isEmpty, isInputLike, paramToObj, stringToBoolean } from './utils';
-
-type RequestOptions = IWinterRequestFrameworkOptionsBase<Request>;
-
-export type WinterRequestStaticArgs = {
-	element?: HTMLElement,
-	handler?: string,
-	options?: RequestOptions,
-};
+import { WinterRequest } from '../request';
+import { getElement, getRequestDataAttrs, isEmpty, isInputLike, paramToObj, stringToBoolean } from '../utils';
+import { WinterResponse } from '../types';
 
 /**
  * @classdesc The main Request class for Winter AJAX Framework.
  */
-export class Request extends WinterRequestFrameworkBase {
+export class WinterRequestExtras extends WinterRequest {
 	protected _options: RequestOptions;
 
 	private _element?: HTMLElement;
@@ -38,7 +32,7 @@ export class Request extends WinterRequestFrameworkBase {
 
 		// data-request-* options
 		if (_element) {
-			options = merge({
+			options = merge<RequestOptions>({
 				confirm: _element.dataset.requestConfirm,
 				redirect: _element.dataset.requestRedirect,
 				loading: _element.dataset.requestLoading,
@@ -53,7 +47,7 @@ export class Request extends WinterRequestFrameworkBase {
 			}, options);
 		}
 
-		super(handler, options);
+		super(handler, merge<RequestOptions>(defaults, options));
 
 		this._element = _element;
 
@@ -67,7 +61,22 @@ export class Request extends WinterRequestFrameworkBase {
 		}
 
 		// Loading
-		this._loading = getElement(this.options.loading);
+		this._loading = getElement(this._options.loading);
+
+		// Track inputs
+		if (typeof this._options.trackInput === 'number') {
+			this._options.onTrackInput(this._options.trackInput);
+		} else if (this._options.trackInput === true) {
+			this._options.onTrackInput();
+		}
+	}
+
+	get options(): RequestOptions {
+		return this._options;
+	}
+
+	set options(options: RequestOptions) {
+		this._options = options;
 	}
 
 	get element(): HTMLElement {
@@ -83,16 +92,6 @@ export class Request extends WinterRequestFrameworkBase {
 	}
 
 	/**
-	 * Get an instance of the request framework.
-	 * 
-	 * @param args Initialization arguments.
-	 * @returns An instance of the request framework.
-	 */
-	static instance(args?: WinterRequestStaticArgs): Request {
-		return new Request(args.element, args.handler, args.options);
-	}
-
-	/**
 	 * Searches DOM for `request-data` data attributes starting at the init element and works up the DOM tree. Parent elements with the same keys are overridden by child elements.
 	 * 
 	 * * If `options.files` is enabled, returns a `FormData` object.
@@ -102,11 +101,11 @@ export class Request extends WinterRequestFrameworkBase {
 	protected getData(): FormData | URLSearchParams | Record<string, any> {
 		let inputName: string;
 
-		const requestData: Record<string, any> = getRequestDataAttrs(this.element);
+		let requestData: Record<string, any>;
 
 		// If options.data, merge into requestData
 		if (!isEmpty(this.options.data)) {
-			Object.assign(requestData, this.options.data);
+			Object.assign(requestData, this.options.data, getRequestDataAttrs(this.element));
 		}
 
 		// If this instance is not bound to a form, but to an input-like element, get the value
@@ -169,7 +168,7 @@ export class Request extends WinterRequestFrameworkBase {
 	 * @returns The response from the server, or void if the request was canceled by the user or another script.
 	 * @throws {ValidationFailedError} When browser-based form validation fails.
 	 */
-	async send(data?: unknown): Promise<void | AxiosResponse<WinterRequestResponseData>> {
+	async send(data?: unknown): Promise<void | WinterResponse> {
 		// Validate the form client-side
 		if (this.options.browserValidate && this.form.checkValidity()) {
 			this.form.reportValidity();

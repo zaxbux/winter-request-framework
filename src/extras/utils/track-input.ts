@@ -1,5 +1,5 @@
-import DataStore from './data-store';
-import { Request } from '../request';
+import DataStore from '../../utils/data-store';
+import { WinterRequestExtras } from '../';
 
 export function trackInput(interval = 300): void {
 	const documentOnKeydown = 'input[type=text][data-request], input[type=submit][data-request], input[type=password][data-request]';
@@ -12,7 +12,9 @@ export function trackInput(interval = 300): void {
 				DataStore.remove(document, 'track_input_timer');
 			}
 
-			Request.instance({ element: ev.target });
+			const request = new WinterRequestExtras(ev.target);
+			request.send();
+
 			ev.preventDefault();
 			ev.stopPropagation();
 		}
@@ -43,13 +45,13 @@ export function trackInput(interval = 300): void {
 			const target = ev.target;
 
 			DataStore.put(ev.currentTarget, 'track_input_timer', window.setTimeout(() => {
-				let lastDataTrackInputRequest: Request = DataStore.get(ev.currentTarget, 'track_input_last_request');
+				let lastDataTrackInputRequest: WinterRequestExtras = DataStore.get(ev.currentTarget, 'track_input_last_request');
 
 				if (lastDataTrackInputRequest) {
 					lastDataTrackInputRequest.cancel();
 				}
 
-				lastDataTrackInputRequest = Request.instance({element: target});
+				lastDataTrackInputRequest = new WinterRequestExtras(target);
 				DataStore.put(ev.currentTarget, 'track_input_last_request', lastDataTrackInputRequest);
 				lastDataTrackInputRequest.send();
 

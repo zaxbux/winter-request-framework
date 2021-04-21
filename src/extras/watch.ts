@@ -1,4 +1,4 @@
-import { Request } from '../request';
+import { WinterRequestExtras } from '.';
 
 /**
  * Attach event listeners to the document and listen for change, click, and submit events.
@@ -8,7 +8,8 @@ export default function watch(): void {
 
 	document.addEventListener('change', (ev) => {
 		if (ev.target instanceof HTMLElement && ev.target.matches(documentOnChange)) {
-			Request.instance({ element: ev.target }).send();
+			const request = new WinterRequestExtras(ev.target);
+			request.send();
 		}
 	});
 	
@@ -18,7 +19,8 @@ export default function watch(): void {
 		if (ev.target instanceof HTMLElement && ev.target.matches(documentOnClick)) {
 			ev.preventDefault();
 
-			Request.instance({ element: ev.target });
+			const request = new WinterRequestExtras(ev.target);
+			request.send();
 
 			if (ev.target.matches('[type=submit]')) {
 				ev.stopPropagation();
@@ -28,7 +30,8 @@ export default function watch(): void {
 
 	document.addEventListener('submit', (ev) => {
 		if (ev.target instanceof HTMLElement && ev.target.matches('[data-request]')) {
-			Request.instance({element: ev.target }).send();
+			const request = new WinterRequestExtras(ev.target);
+			request.send();
 
 			ev.preventDefault();
 			ev.stopPropagation();

@@ -2,8 +2,6 @@ import { parse } from 'json5';
 import { InvalidHandlerError } from '../errors';
 
 export * from './data-store';
-export * from './track-input';
-export * from './inject-partials';
 
 type HTMLInputLikeElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement;
 

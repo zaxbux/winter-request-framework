@@ -1,139 +1,70 @@
-import * as events from '../events';
-import { Request } from '../request';
-import { defaults as baseDefaults, IWinterRequestFrameworkOptionsBase } from './base';
+import { RequestOptions } from './types';
 
-const defaults: IWinterRequestFrameworkOptionsBase<Request> = {
-	...baseDefaults,
-	...{
-		handlers: {
-			onConfirmMessage: async function (message?) {
+const defaults: RequestOptions = {
+	url: window.location.href,
+	confirm: false,
+	data: {},
+	redirect: null,
+	json: false,
+	update: {},
+	flash: false,
+	//handlers: {
+	onSetup: async () => { /**/ },
+	onSuccess: async function (response) {
+		// Handle flash messages
+		if (this.options.flash && response.data.X_WINTER_FLASH_MESSAGES) {
+			for (const [type, message] of Object.entries<string>(response.data.X_WINTER_FLASH_MESSAGES)) {
+				await this.options.onFlashMessage.call(this, message, type);
+			}
+		}
 
-				const _event = window.dispatchEvent(events.ajaxConfirmMessage({ context: this, message }));
-
-				if (!_event) return;
-
-				// Use native window.confirm() if Event#preventDefault() was not called
-				if (message) {
-					return await baseDefaults.handlers.onConfirmMessage.call(this, message);
-				}
-			},
-			onErrorMessage: async function (message) {
-
-				const _event = window.dispatchEvent(events.ajaxErrorMessage({ context: this, message }));
-
-				// Use native window.alert() if Event#preventDefault() was not called
-				if (!_event && message) {
-					await baseDefaults.handlers.onError.call(this, message);
-				}
-			},
-			onSetup: async function() {
-				// Trigger an event on the 'loading' element
-				if (this.loading instanceof HTMLElement) {
-					this.loading.dispatchEvent(events.wnBeforeRequest());
-				}
-
-				// Trigger the 'ajaxBeforeSend' event on window
-				window.dispatchEvent(events.ajaxBeforeSend({ context: this }));
-
-				// Trigger the 'ajaxPromise' event on the attached element
-				if (this.element) this.element.dispatchEvent(events.ajaxPromise({ context: this }));
-			},
-			onSuccess: async function (response) {
-				const element = this.form || this.element;
-				if (!this.options.redirect) {
-					if (element)  element.dispatchEvent(events.ajaxDone({ context: this, response }));
-				}
-
-				// Halt here if onBeforeUpdate() returns `false`
-				if ((await this.options.handlers.onBeforeUpdate.call(this, response)) === false) {
-					return;
-				}
-
-				// Trigger 'ajaxBeforeUpdate' on the form, halt if Event.preventDefault() is called
-				if (element && !element.dispatchEvent(events.ajaxBeforeUpdate({ context: this, response }))) {
-					return;
-				}
-				
-				// Handle flash messages
-				if (this.options.flash && response.data.X_WINTER_FLASH_MESSAGES) {
-					for (const [type, message] of Object.entries<string>(response.data.X_WINTER_FLASH_MESSAGES)) {
-						await this.options.handlers.onFlashMessage.call(this, message, type);
-					}
-				}
-
-				// Proceed with the update process
-				await this.options.handlers.onUpdateResponse.call(this, response.data);
-
-				if (element) element.dispatchEvent(events.ajaxSuccess({ context: this, data: response.data }));
-			},
-			onError: async function (error) {
-				const element = this.form || this.element;
-
-				if (!this.options.redirect) {
-					if (element) element.dispatchEvent(events.ajaxFail({ context: this, error }));
-				}
-			
-				let errorMsg: string = error.response.statusText;
-
-				// Status 406 is a 'smart error' that returns a response object.
-				// It is processed the same way as a successful response.
-				if (error.response && error.response.status == 406 && error.response.data) {
-					errorMsg =  error.response.data.X_WINTER_ERROR_MESSAGE;
-					await this.options.handlers.onUpdateResponse.call(this, error.response.data);
-				}
-
-				// Trigger 'ajaxError' on the form, halt if event.preventDefault() is called
-				if (element && !element.dispatchEvent(events.ajaxError({ context: this, error }))) {
-					return;
-				}
-
-				this.options.handlers.onErrorMessage.call(this, errorMsg);
-			},
-			onComplete: async function (response, error) {
-				const element = this.form || this.element;
-
-				if (this.loading instanceof HTMLElement) {
-					this.loading.dispatchEvent(events.wnAfterRequest());
-				}
-
-				if (element) element.dispatchEvent(events.ajaxAlways({ context: this, response, error }));
-
-				if (element) element.dispatchEvent(events.ajaxComplete({ context: this, response, error }));
-			},
-			//onUpdateResponse: baseDefaults.handlers.onUpdateResponse,
-			onValidationMessage: async function (message, fields) {
-				const element = this.form || this.element;
-
-				if (element) element.dispatchEvent(events.ajaxValidation({ context: this, message, fields }));
-
-				let isFirstInvalidField = true;
-
-				for (const [fieldName, fieldMessages] of Object.entries(fields)) {
-					// Convert `nameArray.fieldName` to `nameArray[fieldName]`
-					const arrayName = fieldName.replace(/\.(\w+)/g, '[$1]');
-
-					const fieldElements = this.form.querySelectorAll<HTMLElement>(`[name="${arrayName}"], [name="${arrayName}[]"], [name$="[${arrayName}]"], [name$="[${arrayName}][]"]`);
-					if (fieldElements.length > 0 && fieldElements[0].matches(':enabled')) {
-						const fieldElement = fieldElements[0];
-
-						const _event = window.dispatchEvent(events.ajaxInvalidField({ fieldElement, arrayName, fieldMessages, isFirstInvalidField }));
-
-						if (isFirstInvalidField) {
-							if (!_event) fieldElement.focus();
-							isFirstInvalidField = false;
-						}
-					}
-				}
-			},
-			onRedirectResponse: async function (url) {
-				window.addEventListener('popstate', () => {
-					if (this.element) this.element.dispatchEvent(events.ajaxRedirected());
-				}, { once: true });
-
-				await baseDefaults.handlers.onRedirectResponse.call(this, url);
-			},
-		},
+		// Proceed with the update process
+		await this.options.onUpdateResponse.call(this, response.data);
 	},
+	onError: async function (error) {
+		let errorMsg: string;
+
+		// Status 406 is a 'smart error' that returns a response object.
+		// It is processed the same way as a successful response.
+		if (error.response && error.response.status == 406 && error.response.data) {
+			errorMsg =  error.response.data.X_WINTER_ERROR_MESSAGE;
+			await this.options.onUpdateResponse.call(this, error.response.data);
+		}
+
+		this.options.onErrorMessage.call(this, errorMsg || error.response.data);
+	},
+	onComplete: async () => { /**/ },
+	onErrorMessage: async function (message) {
+		alert(message);
+	},
+	onConfirmMessage: async function (message?) {
+		return window.confirm(message || 'Are you sure?');
+	},
+	onValidationMessage: async () => { /**/ },
+	onFlashMessage: async () => { /**/ },
+	onUpdateResponse: async function (data) {
+		//Handle redirect
+		if (data.X_WINTER_REDIRECT) {
+			this.options.onRedirectResponse.call(this, data.X_WINTER_REDIRECT);
+			return;
+		}
+
+		// Handle asset injection
+		if (data.X_WINTER_ASSETS) {
+			await this.options.onAssets.call(this, data.X_WINTER_ASSETS);
+		}
+
+		// Handle validation
+		if (data.X_WINTER_ERROR_FIELDS) {
+			this.options.onValidationMessage.call(this, data.X_WINTER_ERROR_MESSAGE, data.X_WINTER_ERROR_FIELDS);
+		}
+	},
+	onRedirectResponse: async function (url) {
+		window.location.assign(url);
+	},
+	onBeforeUpdate: async () => { /**/ },
+	onAssets: async () => { /**/ },
+	//},
 };
 
 export default defaults;
