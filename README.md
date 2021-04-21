@@ -1,13 +1,15 @@
-# Winter CMS Request
+# Winter CMS Request Framework
 
 This is a modern implementation of the Winter CMS Request library. The original is based on jQuery, which may not be preferable for some developers to use. This library is intended for use on your front end, in themes. Most of the functionality and features have been kept from the original implementation, however it is not meant to replace the framework used in the backend of Winter.
+
+There are two parts to this library, a really basic implementation for making requests and handling all responses yourself, and an implementation with "extras" that simulate the behavior of the original library.
 
 # Breaking Changes
 
  * The data-* attributes that relied on `eval()` have been removed. There are better ways to achieve this functionality.
  * Asset injection isn't supported by default, but you can extend the plugin to accomplish this.
  * Global AJAX events are removed.
- * `$.Deferred()` promises are removed.
+ * `$.Deferred()`-style promises are removed.
  * Support for the global object `$.wn.stripeLoadIndicator` is removed.
 
 # Improvements
@@ -22,6 +24,9 @@ This is a modern implementation of the Winter CMS Request library. The original 
 
 ```javascript
 import { WinterRequest } from '@zaxbux/winter-request-framework';
+
+// This is the "extended" version, which inherits from the "base" version.
+import { WinterRequestExtras } from '@zaxbux/winter-request-framework';
 
 const form = document.querySelector('#myForm');
 
