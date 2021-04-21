@@ -1,3 +1,4 @@
+import merge from 'deepmerge';
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, CancelTokenSource } from 'axios';
 import { trackInput, validateHandler } from '../utils';
 import { injectPartials } from '../utils';
@@ -293,7 +294,7 @@ export const defaults: IWinterRequestFrameworkOptionsBase<WinterRequestFramework
 			await this.options.handlers.onUpdateResponse.call(this, response.data);
 		},
 		onError: async function (error) {
-			let errorMsg: string = error.response.statusText;
+			let errorMsg: string;
 
 			// Status 406 is a 'smart error' that returns a response object.
 			// It is processed the same way as a successful response.
@@ -302,7 +303,7 @@ export const defaults: IWinterRequestFrameworkOptionsBase<WinterRequestFramework
 				await this.options.handlers.onUpdateResponse.call(this, error.response.data);
 			}
 
-			this.options.handlers.onErrorMessage.call(this, errorMsg);
+			this.options.handlers.onErrorMessage.call(this, errorMsg || error.response.data);
 		},
 		onComplete: async () => { /**/ },
 		onErrorMessage: async function (message) {
@@ -361,10 +362,7 @@ export class WinterRequestFrameworkBase<T = any> implements IWinterRequestFramew
 		validateHandler(handler);
 
 		this._handler = handler;
-		this.options = {
-			...defaults,
-			...options,
-		};
+		this.options = merge<IWinterRequestFrameworkOptionsBase<WinterRequestFrameworkBase>>(defaults, options);
 		this._axiosCancelToken = axios.CancelToken.source();
 		this._axios = axios.create({
 			method: 'post',
@@ -421,13 +419,13 @@ export class WinterRequestFrameworkBase<T = any> implements IWinterRequestFramew
 	 * 
 	 * @returns A Headers object.
 	 */
-	protected getHeaders(): Headers {
-		const requestHeaders = new Headers({
+	protected getHeaders(): Record<string, string> {
+		const requestHeaders ={
 			'X-WINTER-REQUEST-PARTIALS': Object.keys(this.options.update).join('&'),
-		});
+		};
 
 		if (this.options.flash) {
-			requestHeaders.set('X-WINTER-REQUEST-FLASH', 'true');
+			requestHeaders['X-WINTER-REQUEST-FLASH'] = 'true';
 		}
 
 		return requestHeaders;

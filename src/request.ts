@@ -1,3 +1,4 @@
+import merge from 'deepmerge';
 import { AxiosResponse } from 'axios';
 import { ValidationFailedError } from './errors';
 import * as events from './events';
@@ -37,7 +38,7 @@ export class Request extends WinterRequestFrameworkBase {
 
 		// data-request-* options
 		if (_element) {
-			options = {
+			options = merge({
 				confirm: _element.dataset.requestConfirm,
 				redirect: _element.dataset.requestRedirect,
 				loading: _element.dataset.requestLoading,
@@ -49,8 +50,7 @@ export class Request extends WinterRequestFrameworkBase {
 				update: paramToObj(_element.dataset.requestUpdate),
 				data: paramToObj(_element.dataset.requestData),
 				browserValidate: stringToBoolean(_element.dataset.requestBrowserValidate),
-				...options,
-			};
+			}, options);
 		}
 
 		super(handler, options);
