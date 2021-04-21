@@ -20,6 +20,14 @@ There are two parts to this library, a really basic implementation for making re
     * Uses the `X-XSRF-TOKEN` header automatically (set to the value of the XSRF cookie).
     * Request/Response content type is `application/json`.
 
+# Installing
+
+To include the library in your project, install the package. It has been transpiled into CommonJS and ES2020.
+
+```
+npm i -D @zaxbux/winter-request-framework
+```
+
 # Examples
 
 ```javascript
