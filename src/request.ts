@@ -18,7 +18,7 @@ export type WinterRequestStaticArgs = {
 export class Request extends WinterRequestFrameworkBase {
 	protected _options: RequestOptions;
 
-	private _element: HTMLElement;
+	private _element?: HTMLElement;
 	private _loading?: HTMLElement;
 	private _form?: HTMLFormElement;
 
@@ -49,7 +49,7 @@ export class Request extends WinterRequestFrameworkBase {
 				update: paramToObj(_element.dataset.requestUpdate),
 				data: paramToObj(_element.dataset.requestData),
 				browserValidate: stringToBoolean(_element.dataset.requestBrowserValidate),
-				...options
+				...options,
 			};
 		}
 
@@ -57,17 +57,14 @@ export class Request extends WinterRequestFrameworkBase {
 
 		this._element = _element;
 
-		// If not null and a HTMLFormElement was not provided, query the DOM for the selector.
-		// Otherwise, select the closest form element (including the element itself).
-		if (this.options.form !== null && !(this.options.form instanceof HTMLFormElement)) {
-			if (typeof this.options.form == 'string') {
-				this.options.form = document.querySelector<HTMLFormElement>(this.options.form);
-			} else {
-				this.options.form = this.element.closest('form');
+		// Query the DOM for the selector, or select the closest form element (possibly including the element itself).
+		if (this.options.form) {
+			this._form = getElement<HTMLFormElement>(this.options.form);
+		} else {
+			if (this._element) {
+				this._form = this._element.closest('form');
 			}
 		}
-
-		this._form = getElement(this.options.form);
 
 		// Loading
 		this._loading = getElement(this.options.loading);
@@ -92,7 +89,7 @@ export class Request extends WinterRequestFrameworkBase {
 	 * @returns An instance of the request framework.
 	 */
 	static instance(args?: WinterRequestStaticArgs): Request {
-		return new Request(args.element || null, args.handler, args.options);
+		return new Request(args.element, args.handler, args.options);
 	}
 
 	/**
