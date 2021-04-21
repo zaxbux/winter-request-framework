@@ -1,6 +1,6 @@
 {
 	"name": "@zaxbux/winter-request-framework",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "winter-request-framework is a TypeScript replacement for the standard jQuery-based Winter CMS AJAX framework library.",
 	"main": "lib/cjs/index.js",
 	"module": "lib/esm/index.js",
